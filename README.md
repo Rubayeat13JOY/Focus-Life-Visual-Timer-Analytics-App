@@ -48,7 +48,6 @@ animated timers, and graphical output — all without any backend or framework.
 - **JavaScript (Vanilla)**
 - **Chart.js** for data visualization
 
-
-## 👨‍💻 Author
+👨‍💻 Author
 
 Rubayeat Jamil Joy
