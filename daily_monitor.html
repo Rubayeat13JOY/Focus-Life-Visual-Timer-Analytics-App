@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Focus Life – Result Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Segoe UI;
+  background:#0f172a;
+  color:#e5e7eb;
+}
+.page{display:none;height:100vh;padding:40px;}
+.active{display:block;}
+.center{text-align:center;max-width:420px;margin:auto;}
+
+input{
+  width:100%;padding:15px;margin:10px 0;
+  border-radius:12px;border:none;font-size:16px;
+}
+.small{opacity:.6}
+
+/* TIMER */
+.timer-box{position:relative;width:260px;height:260px;margin:30px auto;}
+svg{transform:rotate(-90deg);}
+circle{fill:none;stroke-width:14;stroke-linecap:round;}
+.bg{stroke:#1e293b;}
+.progress{stroke:#22c55e;transition:.5s;}
+.time-text{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:48px;
+}
+.timeout{animation:pulse .8s infinite;color:#ef4444;}
+@keyframes pulse{
+  0%{transform:translate(-50%,-50%) scale(1);}
+  50%{transform:translate(-50%,-50%) scale(1.1);}
+  100%{transform:translate(-50%,-50%) scale(1);}
+}
+</style>
+</head>
+
+<body>
+
+<!-- PAGE 1 -->
+<div class="page active" id="p1">
+  <div class="center">
+    <h1>🧠 Focus Life</h1>
+    <p class="small">Press Enter to start</p>
+  </div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page" id="p2">
+  <div class="center">
+    <h2>📌 Set Task</h2>
+    <input id="name" placeholder="Task name">
+    <input id="mins" type="number" placeholder="Minutes">
+    <p class="small">Press Enter to start focus</p>
+  </div>
+</div>
+
+<!-- PAGE 3 -->
+<div class="page" id="p3">
+  <div class="center">
+    <h2 id="title"></h2>
+
+    <div class="timer-box">
+      <svg width="260" height="260">
+        <circle class="bg" cx="130" cy="130" r="110"/>
+        <circle class="progress" cx="130" cy="130" r="110"
+          stroke-dasharray="691" stroke-dashoffset="0"/>
+      </svg>
+      <div id="time" class="time-text"></div>
+    </div>
+
+    <p class="small">Space = Pause | Enter = Finish</p>
+  </div>
+</div>
+
+<!-- PAGE 4 : RESULT -->
+<div class="page" id="p4">
+  <div class="center">
+    <h2 id="status"></h2>
+    <canvas id="resultChart"></canvas>
+    <p class="small">Press Enter to restart</p>
+  </div>
+</div>
+
+<script>
+let page=1,total=0,remain=0,interval,paused=false;
+let used=0, timeout=false;
+
+const circle=document.querySelector(".progress");
+const length=2*Math.PI*110;
+circle.style.strokeDasharray=length;
+
+function go(n){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("p"+n).classList.add("active");
+  page=n;
+}
+
+function start(){
+  remain=total*60;
+  update();
+  interval=setInterval(()=>{
+    if(paused) return;
+    remain--;
+    used++;
+    update();
+    if(remain<=0){
+      timeout=true;
+      finish();
+    }
+  },1000);
+}
+
+function update(){
+  let m=Math.floor(remain/60);
+  let s=remain%60;
+  time.innerText=`${m}:${s.toString().padStart(2,"0")}`;
+  let offset=length-(remain/(total*60))*length;
+  circle.style.strokeDashoffset=offset;
+  if(remain<total*60*0.3) circle.style.stroke="#ef4444";
+  else if(remain<total*60*0.6) circle.style.stroke="#facc15";
+}
+
+function finish(){
+  clearInterval(interval);
+  go(4);
+  status.innerText = timeout ? "⏰ Time Out" : "✅ Task Completed";
+  drawChart();
+}
+
+function drawChart(){
+  let totalSec=total*60;
+  let miss=totalSec-used;
+  new Chart(resultChart,{
+    type:"bar",
+    data:{
+      labels:["Used Time","Missed Time"],
+      datasets:[{
+        data:[used, miss<0?0:miss],
+        backgroundColor:["#22c55e","#ef4444"]
+      }]
+    },
+    options:{
+      animation:{duration:1200},
+      scales:{y:{beginAtZero:true}}
+    }
+  });
+}
+
+/* KEYBOARD CONTROL */
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    if(page===1) go(2);
+    else if(page===2){
+      total=+mins.value;
+      title.innerText=name.value;
+      go(3); start();
+    }
+    else if(page===3) finish();
+    else if(page===4) location.reload();
+  }
+  if(e.code==="Space" && page===3) paused=!paused;
+});
+</script>
+
+</body>
+</html>
